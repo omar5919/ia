@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <style>
+        #video {
+            transform: rotateY(180deg);
+            -webkit-transform: rotateY(180deg); /* Safari and Chrome */
+            -moz-transform: rotateY(180deg); /* Firefox */
+
+        }
+    </style>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.0/socket.io.js'></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+</head>
+
+<body ng-app="ia">
+<div class="container-fluid" ng-controller="iaController">
+    <br>
+    <div class="row">
+        <div class="col-md-4">
+            <div style="text-align: center">
+                <p style="font-family: Arial,sans-serif;font-weight: bold">Camara Principal</p>
+                <video autoplay playsinline id="videoElement"></video>
+                <br>
+                <div style="text-align: center">
+                    <button type="button" class="btn-primary" ng-click="capturar()">Capturar</button>
+                    <button type="button" class="btn-default" ng-click="entrenar()">Entrenar</button>
+                    <button type="button" class="btn-success">Reconocer</button>
+                    <div ng-show="mostrarEntrenando">
+                        <p>Entrenando...</p>
+                    </div>
+                    <div class="row" ng-show="mostrarCapturar">
+                        <div class="col-md-12">
+                            <canvas id="imgcaptura" width="400" height="300"></canvas>
+                            <label>Nombre:
+                                <input type="text" ng-model="usr.nombre"/>
+                            </label><br>
+                            <label>CIP:
+                                <input type="text" ng-model="usr.cip"/>
+                            </label><br>
+                            <button class="btn-default" ng-click="guardarCaptura()">Guardar</button>
+                            <button class="btn-default">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <canvas id="canvas" width="400" height="300"></canvas>
+        </div>
+        <div class="col-md-4">
+            <div style="text-align: center">
+                <p style="font-family: Arial,sans-serif;font-weight: bold">IA</p>
+                <img id="photo" width="400" height="300" alt="" src=""/>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <p style="font-family: Arial,sans-serif;font-weight: bold">Capturas
+                <button type="button" ng-click="actualizar()">Actualizar</button>
+            </p>
+            <table class="table table-striped">
+                <tr>
+                    <th>id</th>
+                    <th>Nombre</th>
+                    <th>CIP</th>
+                    <th>Fecha.Ing</th>
+                </tr>
+                <tr ng-repeat="x in capturas">
+                    <th>0</th>
+                    <th>{{x.nombre}}</th>
+                    <th>{{x.cip}}</th>
+                    <th>22/01/2021</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" charset="utf-8">
+
+    const app = angular.module('ia', []);
+    app.controller('iaController', function ($scope, $http) {
+
+        const port = 9990;
+        const socket = io.connect(window.location.protocol + '//' + document.domain + ':' + port);
+        socket.on('connect', function () {
+            console.log("Connected...!", socket.connected)
+        });
+
+        var canvas = document.getElementById('canvas');
+        var context = canvas.getContext('2d');
+        const video = document.querySelector("#videoElement");
+
+        video.width = 400;
+        video.height = 300;
+
+        $scope.mostrarCapturar = false;
+        $scope.mostrarEntrenando = false;
+
+        $scope.imgData = '';
+        $scope.capturaImg = '';
+        $scope.capturas = [];
+
+        $scope.usr = {
+            nombre: '',
+            cip: ''
+        }
+
+        $scope.capturar = function () {
+            $scope.mostrarCapturar = true;
+
+            var can = document.getElementById("imgcaptura");
+            var ctx = can.getContext("2d");
+
+            var image = new Image();
+            image.onload = function () {
+                ctx.drawImage(image, 0, 0);
+            };
+            image.src = $scope.imgData;
+
+        }
+
+        $scope.entrenar = function () {
+            $scope.mostrarEntrenando = true;
+            $http.get('http://localhost:9990/entrenar').then(function (response) {
+                debugger
+                $scope.mostrarEntrenando = false;
+            });
+        }
+
+        $scope.actualizar = function () {
+            $http.get('http://localhost:9990/obtenercapturas').then(function (response) {
+                debugger
+                if (response.status === 200) {
+                    $scope.capturas = JSON.parse(response.data)
+                }
+            });
+        }
+
+        $scope.dataURLtoBlob = (dataURL) => {
+            let array, binary, i, len;
+            binary = atob(dataURL.split(',')[1]);
+            array = [];
+            i = 0;
+            len = binary.length;
+            while (i < len) {
+                array.push(binary.charCodeAt(i));
+                i++;
+            }
+            return new Blob([new Uint8Array(array)], {
+                type: 'image/png'
+            });
+        }
+
+        $scope.guardarCaptura = function () {
+            $scope.mostrarCapturar = false;
+            const canvas = document.getElementById('imgcaptura');
+            const file = $scope.dataURLtoBlob(canvas.toDataURL());
+
+            const model = {
+                usr: $scope.usr.nombre,
+                cip: $scope.usr.cip,
+                file: file
+            }
+
+            const configs = {
+                headers: {'Content-Type': undefined},
+                transformRequest: function (data) {
+                    var formData = new FormData();
+                    angular.forEach(data, function (value, key) {
+                        formData.append(key, value);
+                    });
+                    return formData;
+                }
+            };
+
+            $http.post('http://localhost:9990/subir', model, configs).then(function (response) {
+                debugger
+                $scope.imgData = '';
+                $scope.usr = {
+                    nombre: '',
+                    cip: ''
+                }
+                return response.data;
+            });
+        }
+
+        if (navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({video: true})
+                .then(function (stream) {
+                    video.srcObject = stream;
+                    video.play();
+                })
+                .catch(function (err0r) {
+
+                });
+        }
+
+        const FPS = 6;
+        setInterval(() => {
+            width = video.width;
+            height = video.height;
+            context.drawImage(video, 0, 0, width, height);
+            $scope.imgData = canvas.toDataURL('image/jpeg', 0.5);
+            context.clearRect(0, 0, width, height);
+            socket.emit('image', $scope.imgData);
+        }, 1000 / FPS);
+
+        socket.on('response_back', function (image) {
+            photo.setAttribute('src', image);
+
+        });
+    })
+
+</script>
+</body>
+
+</html>

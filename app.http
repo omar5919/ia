@@ -1,0 +1,7 @@
+### index
+GET http://localhost:9990/
+Content-Type: application/json
+
+### subir archivo
+GET http://localhost:5000/users/5
+Content-Type: application/json
