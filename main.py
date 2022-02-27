@@ -34,7 +34,8 @@ dbface = db[collection]
 print(db.list_collection_names())
 
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+ruta = os.path.join(os.getcwd(), "shape_predictor_68_face_landmarks.dat")
+predictor = dlib.shape_predictor(ruta)
 Payload.max_decode_packets = 2048
 UPLOAD_FOLDER = 'upload'
 ROSTROS_FOLDER = 'rostros'
@@ -50,6 +51,7 @@ face_recognizer = cv.face.LBPHFaceRecognizer_create()
 faceClassif = cv.CascadeClassifier(cv.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 video_stream = VideoStream(rtsp_url).start()
+
 
 @app.route("/entrenar", methods=["GET"])
 def entrenar():
@@ -177,7 +179,7 @@ def image2():
         print('No existe frame...')
     else:
         try:
-            frame = imutils.resize(frame,width=450)
+            frame = imutils.resize(frame, width=450)
             gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             frame = ps.putBText(frame, text, text_offset_x=20, text_offset_y=30, vspace=10, hspace=10, font_scale=0.5,
                                 background_RGB=(10, 20, 222), text_RGB=(255, 255, 255))
