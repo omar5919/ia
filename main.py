@@ -21,7 +21,10 @@ from pymongo import MongoClient
 from werkzeug.utils import secure_filename
 
 connection = "mongodb://tgestiona:Tgestiona2021@143.198.59.116:27017/tgestiona"
-rtsp_url = "rtsp://admin:Tgestiona2021@192.168.1.65:554/ch1/main/av_stream"
+#hikvision
+# rtsp_url = "rtsp://admin:Tgestiona2021@192.168.1.65:554/ch1/main/av_stream"
+#idis
+rtsp_url = "rtsp://admin:Tgestiona2022@169.254.77.132:554/trackID=1"
 
 client = MongoClient(connection)
 
@@ -34,7 +37,7 @@ dbface = db[collection]
 print(db.list_collection_names())
 
 detector = dlib.get_frontal_face_detector()
-ruta = os.path.join(os.getcwd(), "shape_predictor_68_face_landmarks.dat")
+ruta = os.path.join(os.path.dirname(os.path.realpath(__file__)), "base\\shape_predictor_68_face_landmarks.dat")
 predictor = dlib.shape_predictor(ruta)
 Payload.max_decode_packets = 2048
 UPLOAD_FOLDER = 'upload'
